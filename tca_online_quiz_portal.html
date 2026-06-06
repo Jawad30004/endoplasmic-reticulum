@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCA | Premium MDCAT Testing Portal</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- html2pdf for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: '#0F172A',
+                        royal: '#2563EB',
+                        cyan: '#06B6D4',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Styles & Security */
+        body {
+            margin: 0;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #020617 0%, #0F172A 50%, #1E3A8A 100%);
+            color: white;
+            user-select: none; /* Anti-copy */
+            -webkit-user-select: none;
+            min-height: 100vh;
+        }
+
+        /* Particles Canvas */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animations */
+        @keyframes fadeInSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-in {
+            animation: fadeInSlideUp 0.5s ease-out forwards;
+        }
+
+        /* Option Cards */
+        .option-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .option-card:hover:not(.selected):not(.disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(8px);
+            border-color: rgba(6, 182, 212, 0.5);
+        }
+
+        .option-card.selected {
+            background: rgba(37, 99, 235, 0.3);
+            border-color: #06B6D4;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            transform: scale(1.02);
+        }
+
+        /* Progress Bar */
+        .progress-bar-fill {
+            transition: width 0.4s ease-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 182, 212, 0.8);
+        }
+
+        /* Review Styles */
+        .review-correct {
+            background: rgba(34, 197, 94, 0.15) !important;
+            border-color: #22c55e !important;
+        }
+        .review-incorrect {
+            background: rgba(239, 68, 68, 0.15) !important;
+            border-color: #ef4444 !important;
+        }
+
+        /* Hide elements securely */
+        .hidden-secure {
+            display: none !important;
+        }
+
+        /* Circular Chart */
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 80%;
+            max-height: 250px;
+        }
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 3.8;
+        }
+        .circle {
+            fill: none;
+            stroke-width: 2.8;
+            stroke-linecap: round;
+            animation: progress 1s ease-out forwards;
+        }
+        @keyframes progress {
+            0% { stroke-dasharray: 0 100; }
+        }
+        .percentage {
+            fill: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 0.5em;
+            text-anchor: middle;
+        }
+        
+        /* Print Styles for PDF */
+        #pdf-export-container {
+            display: none;
+            background: white;
+            color: black;
+            padding: 40px;
+            width: 800px;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- LOADING SCREEN -->
+    <div id="loading-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-navy">
+        <div class="w-20 h-20 border-4 border-cyan/20 border-t-cyan rounded-full animate-spin mb-6"></div>
+        <h2 class="text-2xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan to-royal">TCA PORTAL</h2>
+        <p class="text-gray-400 mt-2 text-sm tracking-widest">LOADING SECURE ENVIRONMENT</p>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app-wrapper" class="hidden-secure min-h-screen flex flex-col relative z-10">
+        
+        <!-- HEADER -->
+        <header class="glass-panel sticky top-0 z-40 border-b border-white/10 px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan to-royal flex items-center justify-center shadow-lg shadow-cyan/20">
+                    <span class="text-xl font-bold text-white">TCA</span>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-bold leading-tight">Tadabbur Coaching Academy</h1>
+                    <p class="text-xs text-cyan flex items-center gap-2">
+                        <i class="fa-solid fa-microscope"></i> MDCAT Biology Portal
+                    </p>
+                </div>
+            </div>
+            <div id="header-student-info" class="hidden md:flex flex-col items-end hidden-secure">
+                <p class="text-sm font-semibold" id="display-student-name">Student Name</p>
+                <p class="text-xs text-gray-400">Instructor: Sir Sulaiman Khan Inqelabi</p>
+            </div>
+        </header>
+
+        <!-- WELCOME SCREEN -->
+        <main id="welcome-screen" class="flex-grow flex items-center justify-center p-6">
+            <div class="glass-panel rounded-2xl p-8 md:p-12 max-w-lg w-full animate-fade-in relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan to-royal"></div>
+                
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold mb-2">Welcome to TCA</h2>
+                    <p class="text-gray-300 text-sm">Professional MDCAT Assessment Portal</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4 text-cyan bg-cyan/10 p-3 rounded-lg border border-cyan/20">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <div class="text-left text-xs">
+                                <p><strong>Topic:</strong> Endoplasmic Reticulum</p>
+                                <p><strong>Total MCQs:</strong> 30</p>
+                                <p><strong>Time:</strong> 30 Minutes</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="start-form" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Full Name *</label>
+                            <div class="relative">
+                                <i class="fa-regular fa-user absolute left-4 top-3.5 text-gray-400"></i>
+                                <input type="text" id="student-name" required autocomplete="off"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-cyan focus:ring-1 focus:ring-cyan transition-all text-white placeholder-gray-500" 
+                                    placeholder="Enter your full name">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-1">Father's Name *</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-users absolute left-4 top-3.5 text-gray-400"></i>
+                                <input type="text" id="father-name" required autocomplete="off"
+                                    class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:border-cyan focus:ring-1 focus:ring-cyan transition-all text-white placeholder-gray-500" 
+                                    placeholder="Enter father's name">
+                            </div>
+                        </div>
+                        <button type="submit" 
+                            class="w-full bg-gradient-to-r from-royal to-cyan hover:from-cyan hover:to-royal text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-cyan/20 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2 mt-4">
+                            <span>Start Assessment</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <p class="text-center text-xs text-gray-500 mt-6">
+                    <i class="fa-solid fa-shield-halved"></i> Secure Browser Environment Active
+                </p>
+            </div>
+        </main>
+
+        <!-- QUIZ INTERFACE -->
+        <main id="quiz-screen" class="hidden-secure flex-grow flex flex-col md:flex-row p-4 md:p-6 gap-6 max-w-7xl mx-auto w-full">
+            
+            <!-- Left Area: Question & Options -->
+            <div class="flex-grow flex flex-col w-full md:w-2/3 lg:w-3/4">
+                
+                <!-- Timer and Progress -->
+                <div class="glass-panel rounded-2xl p-4 mb-6 flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-300 bg-white/5 px-3 py-1 rounded-full border border-white/10" id="question-counter">
+                            Question 1 of 30
+                        </span>
+                        <div class="flex items-center gap-2 text-cyan font-bold bg-cyan/10 px-4 py-1.5 rounded-full border border-cyan/20 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="timer-display" class="tracking-wider text-lg">30:00</span>
+                        </div>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-gray-800 rounded-full h-2">
+                        <div id="progress-bar" class="bg-gradient-to-r from-royal to-cyan h-2 rounded-full progress-bar-fill shadow-[0_0_10px_rgba(6,182,212,0.5)]" style="width: 3.33%"></div>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div class="glass-panel rounded-2xl p-6 md:p-8 flex-grow flex flex-col relative overflow-hidden animate-fade-in" id="question-container">
+                    <!-- Dynamic Content Injected Here -->
+                </div>
+
+                <!-- Footer Controls -->
+                <div class="flex justify-between items-center mt-6">
+                    <button id="btn-prev" class="glass-panel px-6 py-3 rounded-xl hover:bg-white/10 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-angle-left"></i> Previous
+                    </button>
+                    <button id="btn-next" class="bg-gradient-to-r from-royal to-cyan px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-cyan/20 transition-all transform hover:scale-[1.02] flex items-center gap-2 text-sm font-bold">
+                        Next <i class="fa-solid fa-angle-right"></i>
+                    </button>
+                    <button id="btn-submit" class="hidden-secure bg-gradient-to-r from-green-500 to-emerald-600 px-8 py-3 rounded-xl hover:shadow-lg hover:shadow-green-500/20 transition-all transform hover:scale-[1.02] flex items-center gap-2 text-sm font-bold">
+                        Submit Quiz <i class="fa-solid fa-check-double"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Area: Navigation Panel -->
+            <div class="w-full md:w-1/3 lg:w-1/4 flex flex-col gap-6">
+                <div class="glass-panel rounded-2xl p-6 flex flex-col h-full max-h-[600px]">
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
+                        <i class="fa-solid fa-grip"></i> Question Navigator
+                    </h3>
+                    
+                    <!-- Legend -->
+                    <div class="flex justify-between text-xs mb-6 text-gray-300">
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-cyan"></div> Answered</div>
+                        <div class="flex items-center gap-1"><div class="w-3 h-3 rounded-full bg-white/10 border border-white/20"></div> Unanswered</div>
+                    </div>
+
+                    <!-- Nav Grid -->
+                    <div id="nav-grid" class="grid grid-cols-5 gap-2 overflow-y-auto pr-2 flex-grow content-start">
+                        <!-- Buttons injected via JS -->
+                    </div>
+                    
+                    <button id="btn-force-submit" class="mt-6 w-full glass-panel border-red-500/50 text-red-400 hover:bg-red-500/10 py-3 rounded-xl transition-colors text-sm font-semibold flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-power-off"></i> End Test Early
+                    </button>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- RESULT SCREEN -->
+        <main id="result-screen" class="hidden-secure flex-grow p-4 md:p-8 flex items-center justify-center">
+            <div class="glass-panel rounded-3xl p-8 md:p-12 w-full max-w-4xl animate-fade-in text-center relative overflow-hidden">
+                <div class="absolute -top-32 -left-32 w-64 h-64 bg-cyan/20 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-32 -right-32 w-64 h-64 bg-royal/20 rounded-full blur-3xl"></div>
+                
+                <h2 class="text-3xl md:text-4xl font-bold mb-2">Performance Report</h2>
+                <p class="text-gray-300 mb-8">Tadabbur Coaching Academy (TCA) - MDCAT</p>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-12 mb-10">
+                    <!-- Score Chart -->
+                    <div class="relative w-48 h-48">
+                        <svg viewBox="0 0 36 36" class="circular-chart text-cyan">
+                            <path class="circle-bg"
+                            d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path class="circle" id="score-circle"
+                            stroke="currentColor"
+                            stroke-dasharray="0, 100"
+                            d="M18 2.0845
+                                a 15.9155 15.9155 0 0 1 0 31.831
+                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <text x="18" y="20.35" class="percentage" id="score-percentage">0%</text>
+                        </svg>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 gap-4 w-full md:w-auto">
+                        <div class="glass-panel p-4 rounded-xl border-l-4 border-l-cyan flex flex-col items-start">
+                            <span class="text-xs text-gray-400 uppercase tracking-wider">Total Marks</span>
+                            <span class="text-2xl font-bold" id="stat-total">30</span>
+                        </div>
+                        <div class="glass-panel p-4 rounded-xl border-l-4 border-l-green-500 flex flex-col items-start">
+                            <span class="text-xs text-gray-400 uppercase tracking-wider">Correct</span>
+                            <span class="text-2xl font-bold text-green-400" id="stat-correct">0</span>
+                        </div>
+                        <div class="glass-panel p-4 rounded-xl border-l-4 border-l-red-500 flex flex-col items-start">
+                            <span class="text-xs text-gray-400 uppercase tracking-wider">Incorrect</span>
+                            <span class="text-2xl font-bold text-red-400" id="stat-wrong">0</span>
+                        </div>
+                        <div class="glass-panel p-4 rounded-xl border-l-4 border-l-gray-500 flex flex-col items-start">
+                            <span class="text-xs text-gray-400 uppercase tracking-wider">Skipped</span>
+                            <span class="text-2xl font-bold text-gray-300" id="stat-skipped">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="performance-msg" class="text-xl font-medium text-cyan mb-10"></div>
+
+                <div class="flex flex-wrap justify-center gap-4 relative z-10">
+                    <button id="btn-review" class="bg-white/10 hover:bg-white/20 border border-white/20 px-8 py-3 rounded-xl transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-list-check"></i> Review Answers
+                    </button>
+                    <button id="btn-download" class="bg-gradient-to-r from-royal to-cyan hover:shadow-lg hover:shadow-cyan/20 px-8 py-3 rounded-xl transition-all transform hover:scale-[1.02] flex items-center gap-2 font-bold">
+                        <i class="fa-solid fa-download"></i> Download PDF
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- REVIEW SCREEN -->
+        <main id="review-screen" class="hidden-secure flex-grow p-4 md:p-8 max-w-5xl mx-auto w-full">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold">Detailed Analysis</h2>
+                <button id="btn-back-result" class="glass-panel px-4 py-2 rounded-lg text-sm hover:bg-white/10 transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Score
+                </button>
+            </div>
+            
+            <div id="review-container" class="space-y-6">
+                <!-- Dynamically populated review cards -->
+            </div>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="border-t border-white/10 mt-auto py-4 text-center text-xs text-gray-500 backdrop-blur-md">
+            &copy; 2026 Tadabbur Coaching Academy (TCA). Instructor: Sir Sulaiman Khan Inqelabi. Opposite PIrano CNG Takht Bhai. Ph: 03458116581.
+        </footer>
+    </div>
+
+    <!-- HIDDEN PDF TEMPLATE -->
+    <div id="pdf-export-container">
+        <div style="text-align: center; border-bottom: 2px solid #0F172A; padding-bottom: 20px; margin-bottom: 20px;">
+            <h1 style="color: #0F172A; margin: 0; font-size: 28px;">Tadabbur Coaching Academy (TCA)</h1>
+            <p style="color: #475569; margin: 5px 0;">Opposite PIrano CNG Takht Bhai | Ph: 03458116581</p>
+            <h2 style="color: #2563EB; margin: 10px 0 0 0;">Official MDCAT Result Report</h2>
+        </div>
+        
+        <table style="width: 100%; margin-bottom: 30px; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px; border: 1px solid #E2E8F0;"><strong>Student Name:</strong> <span id="pdf-name"></span></td>
+                <td style="padding: 8px; border: 1px solid #E2E8F0;"><strong>Father's Name:</strong> <span id="pdf-fname"></span></td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #E2E8F0;"><strong>Subject:</strong> Biology (MDCAT)</td>
+                <td style="padding: 8px; border: 1px solid #E2E8F0;"><strong>Topic:</strong> Endoplasmic Reticulum</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #E2E8F0;"><strong>Instructor:</strong> Sir Sulaiman Khan Inqelabi</td>
+                <td style="padding: 8px; border: 1px solid #E2E8F0;"><strong>Date:</strong> <span id="pdf-date"></span></td>
+            </tr>
+        </table>
+
+        <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+            <h3 style="margin: 0 0 15px 0; color: #0F172A;">Performance Summary</h3>
+            <table style="width: 100%; text-align: center;">
+                <tr>
+                    <td><div style="font-size: 24px; font-weight: bold; color: #0F172A;" id="pdf-total">30</div><div style="font-size: 12px; color: #64748B;">Total</div></td>
+                    <td><div style="font-size: 24px; font-weight: bold; color: #16A34A;" id="pdf-correct">0</div><div style="font-size: 12px; color: #64748B;">Correct</div></td>
+                    <td><div style="font-size: 24px; font-weight: bold; color: #DC2626;" id="pdf-wrong">0</div><div style="font-size: 12px; color: #64748B;">Incorrect</div></td>
+                    <td><div style="font-size: 24px; font-weight: bold; color: #2563EB;" id="pdf-percentage">0%</div><div style="font-size: 12px; color: #64748B;">Percentage</div></td>
+                </tr>
+            </table>
+        </div>
+
+        <p style="text-align: center; font-style: italic; color: #64748B; font-size: 12px; margin-top: 50px;">
+            This is an electronically generated report by the TCA Secure Testing Portal.
+        </p>
+    </div>
+
+    <!-- APPLICATION LOGIC -->
+    <script>
+        /**
+         * SECURE IIFE to prevent global variable inspection
+         */
+        (function() {
+            // ==========================================
+            // DATABASE: 30 Image-based MCQs (Easy & Conceptual)
+            // ==========================================
+            const questionDB = [
+                {
+                    q: "What does the word 'Reticulum' mean in the term Endoplasmic Reticulum?",
+                    options: [
+                        "Inside the cell",
+                        "A fluid filled sac",
+                        "A structural network",
+                        "The cytoplasm"
+                    ],
+                    correct: 2,
+                    explanation: "Reticulum literally means 'network'. It is derived from the fact that under the light microscope, it looks like a network inside the cytoplasm."
+                },
+                {
+                    q: "Who was the scientist that named the 'Endoplasmic Reticulum' in 1945?",
+                    options: [
+                        "Garnier",
+                        "Porter",
+                        "Claude",
+                        "Fullman"
+                    ],
+                    correct: 1,
+                    explanation: "It was named by Porter in 1945, though it was first noted jointly by Porter, Claude, and Fullman."
+                },
+                {
+                    q: "If many ribosomes are attached to the small parallel cisternae of the RER, what is this entire structure called?",
+                    options: [
+                        "Microsome",
+                        "Nissl's body",
+                        "Sarcoplasmic reticulum",
+                        "Ergastoplasm"
+                    ],
+                    correct: 3,
+                    explanation: "The notes state: 'If many ribosomes are attached to the small parallel cisternae of the RER, then it is called ergastoplasm.'"
+                },
+                {
+                    q: "Which of the following is NOT a common name given to the Endoplasmic Reticulum?",
+                    options: [
+                        "Circulatory system of the cell",
+                        "Powerhouse of the cell",
+                        "Transport system of the cell",
+                        "Railroad system of the cell"
+                    ],
+                    correct: 1,
+                    explanation: "The powerhouse of the cell is the mitochondria. The ER is known as the circulatory, transport, railroad, and skeleton system of the cell."
+                },
+                {
+                    q: "The Endoplasmic Reticulum appears to be in physical contact with the plasma membrane as well as the:",
+                    options: [
+                        "Mitochondrial membrane",
+                        "Golgi apparatus",
+                        "Nuclear membrane",
+                        "Chloroplast envelope"
+                    ],
+                    correct: 2,
+                    explanation: "According to its location in the text, the ER appears to be in contact with the plasma membrane as well as the nuclear membrane."
+                },
+                {
+                    q: "Which of the following cells completely lacks an Endoplasmic Reticulum?",
+                    options: [
+                        "Pancreatic cells",
+                        "Mature Red Blood Cells (RBCs)",
+                        "Spermatocytes",
+                        "Hepatocytes"
+                    ],
+                    correct: 1,
+                    explanation: "The notes explicitly state that 'Mature Red Blood Cells (RBCs) lack the ER'."
+                },
+                {
+                    q: "Cells that are actively involved in fat metabolism, such as adipose cells and brown fat cells, predominantly contain:",
+                    options: [
+                        "Only Rough Endoplasmic Reticulum (RER)",
+                        "Only Smooth Endoplasmic Reticulum (SER)",
+                        "Both RER and SER equally",
+                        "Ergastoplasm"
+                    ],
+                    correct: 1,
+                    explanation: "Cells actively involved in fat metabolism contain only SER (Smooth Endoplasmic Reticulum)."
+                },
+                {
+                    q: "Pancreatic cells and plasma cells are actively involved in protein synthesis. Which structure would be most abundant in them?",
+                    options: [
+                        "Smooth Endoplasmic Reticulum",
+                        "Rough Endoplasmic Reticulum",
+                        "Tubules",
+                        "Sarcoplasmic reticulum"
+                    ],
+                    correct: 1,
+                    explanation: "Cells actively involved in protein synthesis, like pancreatic and plasma cells, contain mainly RER (Rough Endoplasmic Reticulum)."
+                },
+                {
+                    q: "Hepatocytes (liver cells) are unique because they:",
+                    options: [
+                        "Lack an Endoplasmic Reticulum entirely",
+                        "Contain only Smooth Endoplasmic Reticulum",
+                        "Contain only Rough Endoplasmic Reticulum",
+                        "Contain both RER and SER"
+                    ],
+                    correct: 3,
+                    explanation: "The text notes that some cells contain both RER and SER, giving Hepatocytes (liver cells) as the prime example."
+                },
+                {
+                    q: "The Endoplasmic Reticulum is made of three components. Which of the following is NOT one of them?",
+                    options: [
+                        "Cisternae",
+                        "Cristae",
+                        "Vesicles",
+                        "Tubules"
+                    ],
+                    correct: 1,
+                    explanation: "The ER is composed of Cisternae, Vesicles, and Tubules. Cristae are folds found inside mitochondria."
+                },
+                {
+                    q: "Which component of the ER is described as long, flattened, sac-like cavities arranged parallel in bundles?",
+                    options: [
+                        "Tubules",
+                        "Vesicles",
+                        "Cisternae",
+                        "Microsomes"
+                    ],
+                    correct: 2,
+                    explanation: "Cisternae are long, flattened, sac-like cavities arranged parallel in bundles, mainly found in the RER."
+                },
+                {
+                    q: "Ribosomes are attached to the ER membrane by special proteins called:",
+                    options: [
+                        "Ribophorin I and II",
+                        "Integrins",
+                        "Microtubules",
+                        "Clathrin"
+                    ],
+                    correct: 0,
+                    explanation: "Ribosomes are attached to the ER membrane by special proteins called ribophorin I and II."
+                },
+                {
+                    q: "Which component of the ER is branched, wider with a narrow lumen, free from ribosomes, and located towards the cell periphery?",
+                    options: [
+                        "Cisternae",
+                        "Tubules",
+                        "Vesicles",
+                        "Ergastoplasm"
+                    ],
+                    correct: 1,
+                    explanation: "Tubules are branched and wider structures with a narrow lumen, free from ribosomes, and located predominantly in the SER towards the cell periphery."
+                },
+                {
+                    q: "What are the droplet-like or oval membrane-bound vacuolar structures of the ER called?",
+                    options: [
+                        "Tubules",
+                        "Cisternae",
+                        "Vesicles",
+                        "Nissl's bodies"
+                    ],
+                    correct: 2,
+                    explanation: "Vesicles are droplet-like or oval membrane-bound vacuolar structures that often remain isolated in the cytoplasm."
+                },
+                {
+                    q: "In skeletal and cardiac muscle cells, the specialized Smooth Endoplasmic Reticulum is known as:",
+                    options: [
+                        "Ergastoplasm",
+                        "Sarcoplasmic reticulum",
+                        "Microsome",
+                        "Nissl's body"
+                    ],
+                    correct: 1,
+                    explanation: "In skeletal and cardiac muscle cells, the SER is known as the sarcoplasmic reticulum."
+                },
+                {
+                    q: "What is the primary function of the sarcoplasmic reticulum in muscle cells?",
+                    options: [
+                        "Protein synthesis",
+                        "Lactic acid removal",
+                        "Storing calcium ions (Ca2+)",
+                        "Detoxification of drugs"
+                    ],
+                    correct: 2,
+                    explanation: "The sarcoplasmic reticulum stores calcium ions (Ca2+) in their lumen, which is crucial for muscle contraction and relaxation."
+                },
+                {
+                    q: "The Endoplasmic Reticulum divides the intracellular space into two compartments. The space strictly inside the ER tubules and cisternae is called:",
+                    options: [
+                        "Cytoplasmic space",
+                        "Extraluminal space",
+                        "Perinuclear space",
+                        "Luminal space"
+                    ],
+                    correct: 3,
+                    explanation: "The luminal compartment is the space inside the ER tubules/cisternae, while extraluminal refers to the surrounding cytoplasm."
+                },
+                {
+                    q: "According to the origin of the ER, the Rough Endoplasmic Reticulum (RER) is directly formed from the:",
+                    options: [
+                        "Plasma membrane",
+                        "Nuclear membrane",
+                        "Golgi apparatus",
+                        "Lysosomes"
+                    ],
+                    correct: 1,
+                    explanation: "The notes on 'Origin of ER' explicitly state that the RER is formed from the nuclear membrane."
+                },
+                {
+                    q: "How is the Smooth Endoplasmic Reticulum (SER) thought to originate in the cell?",
+                    options: [
+                        "From the nuclear membrane directly",
+                        "From the plasma membrane",
+                        "From the RER by the loss of ribosomes",
+                        "From the fusion of vesicles"
+                    ],
+                    correct: 2,
+                    explanation: "SER is formed from RER by the loss of its attached ribosomes."
+                },
+                {
+                    q: "Small fragments of RER formed during cell homogenization, which are NOT considered true cell organelles, are called:",
+                    options: [
+                        "Microsomes",
+                        "Nissl's bodies",
+                        "Ergastoplasm",
+                        "Tubules"
+                    ],
+                    correct: 0,
+                    explanation: "Microsomes are fragments of RER formed during homogenization and are considered artifacts of cell disruption, not true organelles."
+                },
+                {
+                    q: "Why is the Rough Endoplasmic Reticulum (RER) considered a more stable structure compared to the SER?",
+                    options: [
+                        "Because it is closer to the plasma membrane",
+                        "Because it is made of branched tubules",
+                        "Because ribosomes are attached to its outer surface",
+                        "Because it is involved in lipid metabolism"
+                    ],
+                    correct: 2,
+                    explanation: "The RER is a more stable structure due to the presence of ribosomes firmly attached to its outer surface."
+                },
+                {
+                    q: "Which type of Endoplasmic Reticulum is primarily composed of tubules rather than cisternae and vesicles?",
+                    options: [
+                        "Rough ER",
+                        "Granular ER",
+                        "Smooth ER",
+                        "Ergastoplasm"
+                    ],
+                    correct: 2,
+                    explanation: "The Smooth Endoplasmic Reticulum (SER) is mainly composed of tubules, whereas the RER is mainly composed of cisternae and vesicles."
+                },
+                {
+                    q: "Along with the cytoskeleton, what structure provides mechanical support to the cell?",
+                    options: [
+                        "Lysosomes",
+                        "Endoplasmic Reticulum",
+                        "Golgi apparatus",
+                        "Mitochondria"
+                    ],
+                    correct: 1,
+                    explanation: "According to its functions, the Endoplasmic Reticulum, along with the cytoskeleton, provides mechanical support to the cell."
+                },
+                {
+                    q: "The Smooth Endoplasmic Reticulum (SER) is actively involved in the synthesis of all the following EXCEPT:",
+                    options: [
+                        "Phospholipids",
+                        "Steroids",
+                        "Oils",
+                        "Secretory Proteins"
+                    ],
+                    correct: 3,
+                    explanation: "The SER synthesizes lipids including phospholipids, steroids, and oils. Secretory proteins are synthesized by the RER."
+                },
+                {
+                    q: "Which specific enzyme is mentioned as being present in the ER membrane and is involved in carbohydrate metabolism?",
+                    options: [
+                        "Catalase",
+                        "Acid phosphatase",
+                        "Glucose-6-phosphatase",
+                        "Amylase"
+                    ],
+                    correct: 2,
+                    explanation: "The ER membrane contains some enzymes involved in carbohydrate metabolism, such as glucose-6-phosphatase."
+                },
+                {
+                    q: "During which phase of cell division do fragmented elements of the ER arrange around the chromosomes to form the new nuclear membrane?",
+                    options: [
+                        "Prophase",
+                        "Metaphase",
+                        "Anaphase",
+                        "Telophase"
+                    ],
+                    correct: 3,
+                    explanation: "The fragmented elements of the ER arrange around chromosomes to form the new nuclear membrane during telophase of cell division."
+                },
+                {
+                    q: "According to the provided text, which of the following organelles do NOT originate directly or indirectly from the Endoplasmic Reticulum?",
+                    options: [
+                        "Golgi apparatus and Lysosomes",
+                        "Vacuoles and Vesicles",
+                        "Nuclear membrane",
+                        "Mitochondria and Plastids (chloroplasts)"
+                    ],
+                    correct: 3,
+                    explanation: "All membranous organelles EXCEPT mitochondria and plastids (chloroplasts) are thought to originate directly or indirectly from the ER."
+                },
+                {
+                    q: "The detoxification of drugs, pollutants, steroids, and other toxins, particularly in liver cells, is primarily the function of the:",
+                    options: [
+                        "Rough Endoplasmic Reticulum (RER)",
+                        "Smooth Endoplasmic Reticulum (SER)",
+                        "Golgi apparatus",
+                        "Ribosomes"
+                    ],
+                    correct: 1,
+                    explanation: "Detoxification of drugs, pollutants, steroids, and other toxins is specifically a function of the SER."
+                },
+                {
+                    q: "In plant cells, the Endoplasmic Reticulum contributes to the formation of what specific structure during cytokinesis?",
+                    options: [
+                        "Cell plate",
+                        "Chloroplast",
+                        "Nucleolus",
+                        "Central vacuole"
+                    ],
+                    correct: 0,
+                    explanation: "The notes list 'Cell-plate formation' as a function, stating that in plant cells, the ER contributes to the formation of the cell plate during cytokinesis."
+                },
+                {
+                    q: "What is the specific term used for ergastoplasm (RER with many ribosomes) when it is found in nerve cells?",
+                    options: [
+                        "Microsomes",
+                        "Nissl's bodies",
+                        "Sarcoplasmic reticulum",
+                        "Ribophorins"
+                    ],
+                    correct: 1,
+                    explanation: "If many ribosomes are attached to the small parallel cisternae of the RER, it is called ergastoplasm. In nerve cells, the ergastoplasm is known as Nissl's bodies."
+                }
+            ];
+
+            // ==========================================
+            // STATE MANAGEMENT
+            // ==========================================
+            const state = {
+                studentName: "",
+                fatherName: "",
+                currentQIndex: 0,
+                answers: new Array(30).fill(null), // null means unanswered
+                timeRemaining: 1800, // 30 minutes in seconds
+                timerInterval: null,
+                isSubmitted: false
+            };
+
+            // ==========================================
+            // DOM ELEMENTS
+            // ==========================================
+            const els = {
+                appWrapper: document.getElementById('app-wrapper'),
+                loadingScreen: document.getElementById('loading-screen'),
+                welcomeScreen: document.getElementById('welcome-screen'),
+                quizScreen: document.getElementById('quiz-screen'),
+                resultScreen: document.getElementById('result-screen'),
+                reviewScreen: document.getElementById('review-screen'),
+                
+                startForm: document.getElementById('start-form'),
+                studentNameInput: document.getElementById('student-name'),
+                fatherNameInput: document.getElementById('father-name'),
+                displayStudentName: document.getElementById('display-student-name'),
+                headerStudentInfo: document.getElementById('header-student-info'),
+                
+                qContainer: document.getElementById('question-container'),
+                qCounter: document.getElementById('question-counter'),
+                progressBar: document.getElementById('progress-bar'),
+                timerDisplay: document.getElementById('timer-display'),
+                navGrid: document.getElementById('nav-grid'),
+                
+                btnPrev: document.getElementById('btn-prev'),
+                btnNext: document.getElementById('btn-next'),
+                btnSubmit: document.getElementById('btn-submit'),
+                btnForceSubmit: document.getElementById('btn-force-submit'),
+                btnReview: document.getElementById('btn-review'),
+                btnDownload: document.getElementById('btn-download'),
+                btnBackResult: document.getElementById('btn-back-result'),
+                
+                // Results
+                statTotal: document.getElementById('stat-total'),
+                statCorrect: document.getElementById('stat-correct'),
+                statWrong: document.getElementById('stat-wrong'),
+                statSkipped: document.getElementById('stat-skipped'),
+                scorePercentage: document.getElementById('score-percentage'),
+                scoreCircle: document.getElementById('score-circle'),
+                perfMsg: document.getElementById('performance-msg'),
+                reviewContainer: document.getElementById('review-container')
+            };
+
+            // ==========================================
+            // INITIALIZATION
+            // ==========================================
+            function init() {
+                initParticles();
+                
+                // Simulate loading secure environment
+                setTimeout(() => {
+                    els.loadingScreen.classList.add('hidden-secure');
+                    els.appWrapper.classList.remove('hidden-secure');
+                }, 1500);
+
+                // Event Listeners
+                els.startForm.addEventListener('submit', handleStart);
+                els.btnNext.addEventListener('click', () => navigate(1));
+                els.btnPrev.addEventListener('click', () => navigate(-1));
+                els.btnSubmit.addEventListener('click', confirmSubmit);
+                els.btnForceSubmit.addEventListener('click', confirmSubmit);
+                els.btnReview.addEventListener('click', showReview);
+                els.btnBackResult.addEventListener('click', hideReview);
+                els.btnDownload.addEventListener('click', generatePDF);
+
+                // Anti-cheat measures
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
+                        e.preventDefault();
+                    }
+                });
+                
+                // Warning on unload
+                window.addEventListener('beforeunload', (e) => {
+                    if(state.studentName && !state.isSubmitted) {
+                        e.preventDefault();
+                        e.returnValue = '';
+                    }
+                });
+            }
+
+            // ==========================================
+            // QUIZ LOGIC
+            // ==========================================
+            function handleStart(e) {
+                e.preventDefault();
+                const name = els.studentNameInput.value.trim();
+                const fname = els.fatherNameInput.value.trim();
+                
+                if(!name || !fname) return;
+
+                state.studentName = name;
+                state.fatherName = fname;
+                
+                // Update UI
+                els.displayStudentName.textContent = name;
+                els.headerStudentInfo.classList.remove('hidden-secure');
+                
+                // Screen transition
+                els.welcomeScreen.classList.add('hidden-secure');
+                els.quizScreen.classList.remove('hidden-secure');
+                
+                buildNavGrid();
+                renderQuestion();
+                startTimer();
+            }
+
+            function buildNavGrid() {
+                els.navGrid.innerHTML = '';
+                for(let i = 0; i < questionDB.length; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = `w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all glass-panel hover:bg-white/10`;
+                    btn.textContent = i + 1;
+                    btn.onclick = () => jumpToQuestion(i);
+                    els.navGrid.appendChild(btn);
+                }
+                updateNavUI();
+            }
+
+            function updateNavUI() {
+                const buttons = els.navGrid.children;
+                for(let i = 0; i < buttons.length; i++) {
+                    const btn = buttons[i];
+                    // Reset classes carefully preserving glass-panel
+                    btn.className = `w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all border`;
+                    
+                    if(i === state.currentQIndex) {
+                        // Current
+                        btn.classList.add('bg-white/10', 'border-cyan', 'shadow-[0_0_10px_rgba(6,182,212,0.5)]', 'text-cyan');
+                    } else if (state.answers[i] !== null) {
+                        // Answered
+                        btn.classList.add('bg-cyan', 'border-cyan', 'text-navy');
+                    } else {
+                        // Unanswered
+                        btn.classList.add('bg-white/5', 'border-white/20', 'text-gray-400');
+                    }
+                }
+            }
+
+            function renderQuestion() {
+                const qData = questionDB[state.currentQIndex];
+                
+                // Header update
+                els.qCounter.textContent = `Question ${state.currentQIndex + 1} of ${questionDB.length}`;
+                const progressPct = ((state.currentQIndex + 1) / questionDB.length) * 100;
+                els.progressBar.style.width = `${progressPct}%`;
+
+                // Content update
+                let html = `
+                    <div class="mb-8">
+                        <span class="text-cyan font-bold text-lg mb-2 block">Q${state.currentQIndex + 1}.</span>
+                        <h2 class="text-xl md:text-2xl font-medium leading-relaxed">${qData.q}</h2>
+                    </div>
+                    <div class="space-y-4 flex-grow">
+                `;
+
+                const optionLabels = ['A', 'B', 'C', 'D'];
+                qData.options.forEach((opt, idx) => {
+                    const isSelected = state.answers[state.currentQIndex] === idx;
+                    const selClass = isSelected ? 'selected' : '';
+                    
+                    html += `
+                        <div class="option-card glass-panel rounded-xl p-4 md:p-5 flex items-center gap-4 border border-white/10 ${selClass}" 
+                             data-opt="${idx}">
+                            <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm shrink-0 flex-col border border-white/20 opt-indicator">
+                                ${optionLabels[idx]}
+                            </div>
+                            <div class="text-sm md:text-base">${opt}</div>
+                        </div>
+                    `;
+                });
+
+                html += `</div>`;
+                els.qContainer.innerHTML = html;
+
+                // Re-trigger animation
+                els.qContainer.classList.remove('animate-fade-in');
+                void els.qContainer.offsetWidth; // trigger reflow
+                els.qContainer.classList.add('animate-fade-in');
+
+                // Attach option listeners
+                const optionCards = els.qContainer.querySelectorAll('.option-card');
+                optionCards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        const optIndex = parseInt(this.getAttribute('data-opt'));
+                        handleSelection(optIndex);
+                    });
+                });
+
+                // Button states
+                els.btnPrev.disabled = state.currentQIndex === 0;
+                
+                if(state.currentQIndex === questionDB.length - 1) {
+                    els.btnNext.classList.add('hidden-secure');
+                    els.btnSubmit.classList.remove('hidden-secure');
+                } else {
+                    els.btnNext.classList.remove('hidden-secure');
+                    els.btnSubmit.classList.add('hidden-secure');
+                }
+
+                updateNavUI();
+            }
+
+            function handleSelection(optIndex) {
+                state.answers[state.currentQIndex] = optIndex;
+                
+                // Visual update immediately
+                const cards = els.qContainer.querySelectorAll('.option-card');
+                cards.forEach(c => {
+                    c.classList.remove('selected');
+                    c.querySelector('.opt-indicator').classList.remove('bg-cyan', 'text-navy');
+                    c.querySelector('.opt-indicator').classList.add('bg-white/10');
+                });
+
+                const selectedCard = els.qContainer.querySelector(`[data-opt="${optIndex}"]`);
+                selectedCard.classList.add('selected');
+                selectedCard.querySelector('.opt-indicator').classList.add('bg-cyan', 'text-navy');
+                selectedCard.querySelector('.opt-indicator').classList.remove('bg-white/10');
+
+                updateNavUI();
+            }
+
+            function navigate(direction) {
+                const newIndex = state.currentQIndex + direction;
+                if(newIndex >= 0 && newIndex < questionDB.length) {
+                    state.currentQIndex = newIndex;
+                    renderQuestion();
+                }
+            }
+
+            function jumpToQuestion(index) {
+                state.currentQIndex = index;
+                renderQuestion();
+            }
+
+            // ==========================================
+            // TIMER
+            // ==========================================
+            function startTimer() {
+                updateTimerDisplay();
+                state.timerInterval = setInterval(() => {
+                    state.timeRemaining--;
+                    updateTimerDisplay();
+                    
+                    if(state.timeRemaining <= 300) {
+                        els.timerDisplay.parentElement.classList.replace('text-cyan', 'text-red-400');
+                        els.timerDisplay.parentElement.classList.replace('bg-cyan/10', 'bg-red-500/10');
+                        els.timerDisplay.parentElement.classList.replace('border-cyan/20', 'border-red-500/30');
+                        els.timerDisplay.parentElement.style.boxShadow = "0 0 10px rgba(239, 68, 68, 0.4)";
+                    }
+
+                    if(state.timeRemaining <= 0) {
+                        clearInterval(state.timerInterval);
+                        autoSubmit();
+                    }
+                }, 1000);
+            }
+
+            function updateTimerDisplay() {
+                const m = Math.floor(state.timeRemaining / 60);
+                const s = state.timeRemaining % 60;
+                els.timerDisplay.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+
+            // ==========================================
+            // SUBMISSION & RESULTS
+            // ==========================================
+            function confirmSubmit() {
+                // Direct submission to keep smooth UX as per constraints
+                processSubmit();
+            }
+
+            function autoSubmit() {
+                processSubmit();
+            }
+
+            function processSubmit() {
+                clearInterval(state.timerInterval);
+                state.isSubmitted = true;
+                
+                let correct = 0;
+                let wrong = 0;
+                let skipped = 0;
+
+                state.answers.forEach((ans, idx) => {
+                    if(ans === null) {
+                        skipped++;
+                    } else if (ans === questionDB[idx].correct) {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                });
+
+                const total = questionDB.length;
+                const percentage = Math.round((correct / total) * 100);
+
+                // Update DOM
+                els.statCorrect.textContent = correct;
+                els.statWrong.textContent = wrong;
+                els.statSkipped.textContent = skipped;
+                els.scorePercentage.textContent = `${percentage}%`;
+                
+                // Circle animation logic
+                els.scoreCircle.style.strokeDasharray = `${percentage}, 100`;
+
+                // Color based on score
+                if(percentage >= 80) {
+                    els.scoreCircle.style.stroke = "#10b981"; // Emerald
+                    els.perfMsg.innerHTML = `<i class="fa-solid fa-trophy text-yellow-400"></i> Outstanding Performance!`;
+                    triggerConfetti();
+                } else if (percentage >= 60) {
+                    els.scoreCircle.style.stroke = "#3b82f6"; // Blue
+                    els.perfMsg.innerHTML = `<i class="fa-solid fa-thumbs-up"></i> Good Job! Keep Practicing.`;
+                } else {
+                    els.scoreCircle.style.stroke = "#ef4444"; // Red
+                    els.perfMsg.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-500"></i> Needs Improvement. Review your mistakes.`;
+                }
+
+                // Prepare PDF data
+                document.getElementById('pdf-name').textContent = state.studentName;
+                document.getElementById('pdf-fname').textContent = state.fatherName;
+                const today = new Date();
+                document.getElementById('pdf-date').textContent = today.toLocaleDateString();
+                document.getElementById('pdf-correct').textContent = correct;
+                document.getElementById('pdf-wrong').textContent = wrong;
+                document.getElementById('pdf-percentage').textContent = `${percentage}%`;
+
+                // Switch screens
+                els.quizScreen.classList.add('hidden-secure');
+                els.resultScreen.classList.remove('hidden-secure');
+            }
+
+            function triggerConfetti() {
+                var duration = 3 * 1000;
+                var animationEnd = Date.now() + duration;
+                var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+                function randomInRange(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                var interval = setInterval(function() {
+                    var timeLeft = animationEnd - Date.now();
+
+                    if (timeLeft <= 0) {
+                        return clearInterval(interval);
+                    }
+
+                    var particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            }
+
+            // ==========================================
+            // REVIEW SYSTEM
+            // ==========================================
+            function showReview() {
+                els.resultScreen.classList.add('hidden-secure');
+                els.reviewScreen.classList.remove('hidden-secure');
+                
+                if(els.reviewContainer.innerHTML === '') {
+                    buildReviewContent();
+                }
+            }
+
+            function hideReview() {
+                els.reviewScreen.classList.add('hidden-secure');
+                els.resultScreen.classList.remove('hidden-secure');
+            }
+
+            function buildReviewContent() {
+                let html = '';
+                const labels = ['A', 'B', 'C', 'D'];
+
+                questionDB.forEach((q, qIdx) => {
+                    const userAns = state.answers[qIdx];
+                    const correctAns = q.correct;
+                    
+                    let statusBadge = '';
+                    if(userAns === correctAns) {
+                        statusBadge = `<span class="bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1 rounded-full text-xs font-bold"><i class="fa-solid fa-check"></i> Correct</span>`;
+                    } else if (userAns === null) {
+                        statusBadge = `<span class="bg-gray-500/20 text-gray-400 border border-gray-500/30 px-3 py-1 rounded-full text-xs font-bold"><i class="fa-solid fa-minus"></i> Skipped</span>`;
+                    } else {
+                        statusBadge = `<span class="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-full text-xs font-bold"><i class="fa-solid fa-xmark"></i> Incorrect</span>`;
+                    }
+
+                    html += `
+                        <div class="glass-panel rounded-2xl p-6 border border-white/10 relative overflow-hidden">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-medium pr-4"><span class="text-cyan font-bold mr-2">Q${qIdx + 1}.</span>${q.q}</h3>
+                                ${statusBadge}
+                            </div>
+                            <div class="space-y-3 mb-6">
+                    `;
+
+                    q.options.forEach((opt, optIdx) => {
+                        let rowClass = "glass-panel p-3 rounded-lg border border-white/5 opacity-70";
+                        let icon = "";
+
+                        if (optIdx === correctAns) {
+                            rowClass = "review-correct font-medium opacity-100";
+                            icon = `<i class="fa-solid fa-check-circle text-green-400 ml-auto"></i>`;
+                        } else if (optIdx === userAns && userAns !== correctAns) {
+                            rowClass = "review-incorrect opacity-100";
+                            icon = `<i class="fa-solid fa-circle-xmark text-red-400 ml-auto"></i>`;
+                        }
+
+                        html += `
+                            <div class="flex items-center gap-3 ${rowClass}">
+                                <div class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold bg-black/20">${labels[optIdx]}</div>
+                                <div class="text-sm flex-grow">${opt}</div>
+                                ${icon}
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                            </div>
+                            <div class="bg-blue-900/30 border border-blue-500/30 rounded-lg p-4 text-sm text-blue-100 flex gap-3 items-start">
+                                <i class="fa-solid fa-lightbulb text-yellow-400 mt-0.5 text-lg"></i>
+                                <div>
+                                    <strong class="block text-white mb-1">Explanation:</strong>
+                                    ${q.explanation}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                els.reviewContainer.innerHTML = html;
+            }
+
+            // ==========================================
+            // PDF GENERATION
+            // ==========================================
+            function generatePDF() {
+                const element = document.getElementById('pdf-export-container');
+                element.style.display = 'block'; // Unhide for capture
+                
+                const opt = {
+                    margin:       0.5,
+                    filename:     `TCA_MDCAT_Result_${state.studentName.replace(/\s+/g, '_')}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2 },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                // Change button state
+                els.btnDownload.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating...`;
+                els.btnDownload.disabled = true;
+
+                html2pdf().set(opt).from(element).save().then(() => {
+                    element.style.display = 'none'; // Hide again
+                    els.btnDownload.innerHTML = `<i class="fa-solid fa-download"></i> Download PDF`;
+                    els.btnDownload.disabled = false;
+                });
+            }
+
+            // ==========================================
+            // BACKGROUND PARTICLES
+            // ==========================================
+            function initParticles() {
+                const canvas = document.getElementById('particle-canvas');
+                const ctx = canvas.getContext('2d');
+                let width = canvas.width = window.innerWidth;
+                let height = canvas.height = window.innerHeight;
+                
+                const particles = [];
+                const particleCount = 50;
+
+                for(let i=0; i<particleCount; i++) {
+                    particles.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        r: Math.random() * 2 + 0.5,
+                        dy: Math.random() * 0.5 + 0.1,
+                        opacity: Math.random() * 0.5 + 0.1
+                    });
+                }
+
+                function animate() {
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    
+                    particles.forEach(p => {
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+                        ctx.fill();
+                        
+                        p.y -= p.dy;
+                        if(p.y < 0) p.y = height;
+                    });
+                    
+                    requestAnimationFrame(animate);
+                }
+
+                window.addEventListener('resize', () => {
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = window.innerHeight;
+                });
+
+                animate();
+            }
+
+            // Boot up
+            window.addEventListener('DOMContentLoaded', init);
+
+        })();
+    </script>
+</body>
+</html>
